@@ -18,4 +18,7 @@ cd Halo
 npm install
 
 4.Start the development server:
-npm start
+npx expo start    (Scan niyo toh sa expo go, dun sa android or IOS)
+
+Pero kapag may lumabas na error dun sa mobile na Uncaught something tas remote something eto run nyo:
+npx expo start --tunnel
