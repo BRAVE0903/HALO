@@ -68,6 +68,13 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={styles.signupText}>Sign Up</Text>
         </TouchableOpacity>
+        </View>
+        <View style={styles.signupContainer}>
+        <Text style={styles.noAccountText}>TEMPORARY SHORTCUT HOMEPAGE </Text>
+        <TouchableOpacity onPress={() => navigation.navigate('HomePage')}>
+          <Text style={styles.signupText}>HOMEPAGE</Text>
+        </TouchableOpacity>
+
       </View>
     </View>
   );
