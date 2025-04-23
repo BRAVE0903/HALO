@@ -1,5 +1,5 @@
 // src/screens/DonorDetailsScreen.tsx
-// CORRECTED DonorCategory type and options
+// Updated: Navigates to Login after successful save.
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -10,13 +10,11 @@ import { getFirestore, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { firebaseConfig } from '../firebaseConfig'; // Adjust path if needed
 import * as Location from 'expo-location'; // Import expo-location
 
-// --- CORRECTED Types ---
-type DonorCategory = 'Restaurant' | 'Bakery' | 'Individual' | 'Business' | null; // Corrected categories as requested
-// --- End Correction ---
+// --- Types ---
+type DonorCategory = 'Restaurant' | 'Bakery' | 'Individual' | 'Business' | null;
 type SimplePickerProps = { label: string; options: string[]; selectedValue: DonorCategory; onValueChange: (value: DonorCategory) => void; };
 
 // --- SimplePicker Component ---
-// Uses the corrected DonorCategory type via SimplePickerProps
 const SimplePicker = ({ label, options, selectedValue, onValueChange }: SimplePickerProps) => (
     <View style={styles.fieldGroup}>
         <Text style={styles.label}>{label}</Text>
@@ -25,7 +23,7 @@ const SimplePicker = ({ label, options, selectedValue, onValueChange }: SimplePi
                 <TouchableOpacity
                     key={option}
                     style={[ styles.pickerOption, selectedValue === option && styles.pickerOptionSelected ]}
-                    onPress={() => onValueChange(option as DonorCategory)} // Cast remains correct
+                    onPress={() => onValueChange(option as DonorCategory)}
                 >
                     <Text style={selectedValue === option ? styles.pickerOptionTextSelected : styles.pickerOptionText}>{option}</Text>
                 </TouchableOpacity>
@@ -36,7 +34,6 @@ const SimplePicker = ({ label, options, selectedValue, onValueChange }: SimplePi
 // --- End SimplePicker ---
 
 // --- Main Screen Component ---
-// Added 'route' prop for navigation params
 const DonorDetailsScreen = ({ navigation, route }: any) => {
 
     // --- State Variables ---
@@ -44,7 +41,6 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
     const [saving, setSaving] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
-    // State uses the corrected DonorCategory type
     const [donorCategory, setDonorCategory] = useState<DonorCategory>(null);
     const [donorName, setDonorName] = useState<string>('');
     const [contactName, setContactName] = useState<string>('');
@@ -72,7 +68,6 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
         const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
             const data = docSnap.data();
             if (data) {
-                // Load category - ensure 'donorCategory' field in Firestore contains one of the new strings
                 setDonorCategory(data.donorCategory || null);
                 setDonorName(data.donorName || '');
                 setContactName(data.contactName || '');
@@ -83,7 +78,6 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
                 setCity(data.city || '');
                 setSelectedCoords(data.locationCoords || null);
             } else {
-                // Reset fields
                 setDonorCategory(null); setDonorName(''); setContactName('');
                 setMobileNumber(''); setEmailId(''); setAddress(''); setPinCode(''); setCity('');
                 setSelectedCoords(null);
@@ -144,9 +138,13 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
             } else {
                  Alert.alert("Address Not Found", "Could not find address details for the selected location.");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Reverse geocoding failed (Donor):", error);
-            Alert.alert("Error", "Could not fetch address details for the selected location.");
+             // Use a more user-friendly alert here from previous step
+             Alert.alert(
+                "Address Lookup Failed",
+                "Could not fetch address details for the selected location. Please check your internet connection and try again, or enter the address manually."
+            );
         } finally {
              setLoading(false);
         }
@@ -157,7 +155,7 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
     // --- handleSaveChanges to save donor data ---
     const handleSaveChanges = async () => {
         if (!currentUser) { setError('User not logged in.'); return; }
-        // Validation uses the corrected donorCategory state
+        // Validation
         if (!donorCategory) { setError('Please select a donor type.'); return; }
         if (!donorName) { setError('Donor Name is required.'); return; }
         if (!mobileNumber) { setError('Mobile Number is required.'); return; }
@@ -166,10 +164,10 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
 
         try {
             const userDocRef = doc(db, 'users', currentUser.uid);
-            // Data structure saves the selected category string
+            // Data structure
             const dataToSave = {
                 role: 'Donor',
-                donorCategory: donorCategory, // Saves the selected 'Restaurant', 'Bakery', etc.
+                donorCategory: donorCategory,
                 donorName: donorName || null,
                 contactName: contactName || null,
                 mobileNumber: mobileNumber || null,
@@ -182,9 +180,18 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
             };
 
             await setDoc(userDocRef, dataToSave, { merge: true });
+
             setSaving(false);
-            Alert.alert('Success', 'Donor details saved.');
-            // navigation.navigate('SomeOtherScreen');
+            Alert.alert(
+                'Success',
+                'Donor details saved.',
+                [ // Add button to Alert for better UX before navigating
+                    { text: "OK", onPress: () => navigation.popToTop() } // Navigate after OK is pressed
+                ],
+                { cancelable: false } // Prevent dismissing alert by tapping outside
+            );
+             // --- MODIFICATION: Removed direct navigation call here, moved to Alert button ---
+            // navigation.popToTop(); // Go back to the first screen in the stack (Login)
 
         } catch (e: any) {
             setSaving(false); console.error('Error saving donor details:', e);
@@ -205,15 +212,13 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
 
             {error && <Text style={styles.errorText}>{error}</Text>}
 
-            {/* --- CORRECTED Donor Picker --- */}
+            {/* --- Donor Picker --- */}
             <SimplePicker
                 label="Donor Type *"
-                options={['Restaurant', 'Bakery', 'Individual', 'Business']} // Corrected options as requested
+                options={['Restaurant', 'Bakery', 'Individual', 'Business']}
                 selectedValue={donorCategory}
                 onValueChange={setDonorCategory}
             />
-            {/* --- End Correction --- */}
-
 
             {/* --- Donor Fields --- */}
              <View style={styles.fieldGroup}>

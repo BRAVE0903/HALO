@@ -1,5 +1,5 @@
 // src/screens/MapScreen.tsx
-// Updated version with fix for loading indicator timing
+// Updated version with Marker component re-enabled
 
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
@@ -48,7 +48,6 @@ const MapScreen = ({ navigation, route }: any) => { // Use proper typing if avai
                     coordsToUse = { latitude: initialCoords.latitude, longitude: initialCoords.longitude };
                 } else {
                     console.log("Fetching current position...");
-                    // Consider adding a timeout or using getLastKnownPositionAsync as a fallback
                     let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
                     console.log("Fetched current position:", location.coords);
                     coordsToUse = { latitude: location.coords.latitude, longitude: location.coords.longitude };
@@ -62,9 +61,8 @@ const MapScreen = ({ navigation, route }: any) => { // Use proper typing if avai
                     longitudeDelta: 0.01,
                 });
 
-                // --- FIX: Set loading false HERE after getting coords and setting region ---
+                // Set loading false HERE after getting coords and setting region
                 setLoading(false);
-                // --- End Fix ---
 
             } catch (error: any) {
                 console.error("Error getting location:", error);
@@ -84,7 +82,6 @@ const MapScreen = ({ navigation, route }: any) => { // Use proper typing if avai
          if (isMapReady && mapRegion && mapRef.current) {
              console.log("Animating map to region:", mapRegion);
              mapRef.current.animateToRegion(mapRegion, 500); // 500ms animation
-             // setLoading(false); // --- FIX: Removed setLoading(false) from here ---
          }
      }, [isMapReady, mapRegion]); // Depends on map readiness and region state
 
@@ -141,20 +138,22 @@ const MapScreen = ({ navigation, route }: any) => { // Use proper typing if avai
                 showsMyLocationButton={true} // Simple button to jump to current location
                 onMapReady={() => { console.log("Map is Ready"); setIsMapReady(true); }} // Track when map tiles are loaded
             >
-        {/* Temporarily comment out the Marker to test */}
-        {/* {markerCoords && (
-            <Marker
-                coordinate={markerCoords}
-                draggable
-                onDragEnd={handleMarkerDragEnd}
-                title="Selected Location"
-                description="Drag to adjust position"
-                pinColor="red"
-            />
-        )} */}
-    </MapView>
+                {/* --- Marker is now UNCOMMENTED --- */}
+                {/*markerCoords && (
+                    <Marker
+                        coordinate={markerCoords}
+                        draggable // Allow user to drag the marker
+                        onDragEnd={handleMarkerDragEnd}
+                        title="Selected Location"
+                        description="Drag to adjust position" // Added description
+                        pinColor="red" // Standard red pin
+                    />
+                )}
+                {/* --- End Marker --- */}
+            </MapView>
 
             {/* Set Location Button */}
+            {/* Disable button if marker coords aren't set */}
             <TouchableOpacity style={styles.setLocationButton} onPress={handleSetLocation} disabled={!markerCoords}>
                 <Text style={styles.setLocationButtonText}>Set This Location</Text>
             </TouchableOpacity>
@@ -186,11 +185,11 @@ const styles = StyleSheet.create({
         bottom: 40,
         left: 30,
         right: 30,
-        height: 55,
+        height: 55, // Slightly taller button
         backgroundColor: '#007AFF', // iOS blue - adjust as needed
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 10,
+        borderRadius: 10, // More rounded corners
         paddingVertical: 12,
         paddingHorizontal: 20,
         elevation: 4, // Android shadow
@@ -201,8 +200,8 @@ const styles = StyleSheet.create({
     },
     setLocationButtonText: {
         color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 18, // Larger font
+        fontWeight: 'bold', // Bold text
     },
 });
 
