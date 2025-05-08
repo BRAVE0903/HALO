@@ -1,161 +1,143 @@
 // src/screens/MapScreen.tsx
-// Updated version with Marker component re-enabled
+// Updated: Marker component uncommented to show the intended pin.
+// WARNING: This code WILL LIKELY CRASH in Expo Go due to native component errors.
+// It requires a Development Build (created via EAS Build) to function correctly.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps'; // Import PROVIDER_GOOGLE and Region type
+// Marker and Callout imports are used now
+import MapView, { Marker, Callout, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 
-// Define navigation prop types if using TypeScript
-// type MapScreenProps = NativeStackScreenProps<AuthStackParamList, 'MapScreen'>; // Use your actual param list
+// Define the hardcoded coordinates
+const HARDCODED_LOCATION = {
+    latitude: 14.729869,
+    longitude: 121.139717,
+    title: "Halo Location", // Title for the marker callout
+    description: "This is the designated spot." // Description for the marker callout
+};
 
-const MapScreen = ({ navigation, route }: any) => { // Use proper typing if available
+const MapScreen = ({ navigation, route }: any) => {
     const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
-    const [markerCoords, setMarkerCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-    const [mapRegion, setMapRegion] = useState<Region | null>(null); // Use Region type
-    const [isMapReady, setIsMapReady] = useState(false); // Track if map is ready
+    // markerCoords holds the hardcoded location, used by the Marker and button
+    const [markerCoords, setMarkerCoords] = useState<{ latitude: number; longitude: number } | null>(HARDCODED_LOCATION);
+    const [mapRegion, setMapRegion] = useState<Region | null>(null);
+    const [isMapReady, setIsMapReady] = useState(false);
     const [loading, setLoading] = useState<boolean>(true);
     const [loadingMessage, setLoadingMessage] = useState('Requesting permissions...');
     const mapRef = useRef<MapView>(null);
 
-    const returnRoute = route.params?.returnRoute; // Get the screen name to return to
-    const initialCoords = route.params?.initialCoords; // Get initial coords if passed
+    const returnRoute = route.params?.returnRoute;
 
-    // 1. Request Permissions & Get Initial Location
+    // 1. Request Permissions & Set Initial Map Region to Hardcoded Location
     useEffect(() => {
         (async () => {
-            setLoading(true); // Start loading
+            setLoading(true);
             setLoadingMessage('Requesting location permissions...');
-            console.log("Requesting location permission...");
             let { status } = await Location.requestForegroundPermissionsAsync();
-            console.log("Location permission status:", status);
-
+            setLocationPermission(status === 'granted');
             if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'Permission to access location was denied. Please enable it in settings to use the map feature.');
-                setLocationPermission(false);
-                setLoading(false); // Stop loading if permission denied
-                if(navigation.canGoBack()) navigation.goBack();
-                return;
+                Alert.alert('Permission Denied', 'Location permission denied. Map will center on the fixed location.');
             }
-            setLocationPermission(true);
-            setLoadingMessage('Fetching location...'); // Update loading message
+            setLoadingMessage('Preparing map...');
 
-            try {
-                let coordsToUse: { latitude: number; longitude: number };
-
-                if (initialCoords) {
-                    console.log("Using initial coordinates:", initialCoords);
-                    coordsToUse = { latitude: initialCoords.latitude, longitude: initialCoords.longitude };
-                } else {
-                    console.log("Fetching current position...");
-                    let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-                    console.log("Fetched current position:", location.coords);
-                    coordsToUse = { latitude: location.coords.latitude, longitude: location.coords.longitude };
-                }
-
-                setMarkerCoords(coordsToUse);
-                setMapRegion({
-                    latitude: coordsToUse.latitude,
-                    longitude: coordsToUse.longitude,
-                    latitudeDelta: 0.01, // Adjust zoom level as needed
-                    longitudeDelta: 0.01,
-                });
-
-                // Set loading false HERE after getting coords and setting region
-                setLoading(false);
-
-            } catch (error: any) {
-                console.error("Error getting location:", error);
-                 if (error.code === 'E_LOCATION_SETTINGS_UNSATISFIED') {
-                    Alert.alert('Location Services Disabled', 'Please enable location services on your device.');
-                 } else {
-                    Alert.alert('Error', 'Could not fetch location.');
-                 }
-                setLoading(false); // Stop loading on error
-                if(navigation.canGoBack()) navigation.goBack();
-            }
+            setMarkerCoords(HARDCODED_LOCATION); // Ensure markerCoords is set
+            setMapRegion({
+                latitude: HARDCODED_LOCATION.latitude,
+                longitude: HARDCODED_LOCATION.longitude,
+                latitudeDelta: 0.005, // Adjust zoom level for the hardcoded pin
+                longitudeDelta: 0.005,
+            });
+            setLoading(false);
         })();
-    }, [initialCoords, navigation]); // Depend on initialCoords and navigation
+    }, [navigation]);
 
-    // useEffect to handle animation AFTER map is ready and region is set
+    // Animate map to region when map is ready AND mapRegion is set
     useEffect(() => {
          if (isMapReady && mapRegion && mapRef.current) {
-             console.log("Animating map to region:", mapRegion);
-             mapRef.current.animateToRegion(mapRegion, 500); // 500ms animation
+             mapRef.current.animateToRegion(mapRegion, 500);
          }
-     }, [isMapReady, mapRegion]); // Depends on map readiness and region state
+     }, [isMapReady, mapRegion]);
 
 
-    // 2. Handle Marker Dragging
-    const handleMarkerDragEnd = (e: any) => {
-        const newCoords = e.nativeEvent.coordinate;
-        setMarkerCoords(newCoords);
-        console.log('Marker dropped at:', newCoords);
-    };
-
-    // 3. Handle Setting Location
+    // Handle Setting Location (will now always use the hardcoded coordinates)
     const handleSetLocation = () => {
         if (!markerCoords) {
-            Alert.alert('Error', 'No location selected.');
+            Alert.alert('Error', 'Location not set.');
             return;
         }
         if (!returnRoute) {
              Alert.alert('Error', 'Could not determine where to return location.');
-             console.error("MapScreen: returnRoute param missing");
              return;
         }
-        console.log(`Returning coords to ${returnRoute}:`, markerCoords);
-        // Navigate back to the previous screen (Donor/Receiver Details)
-        // and pass the selected coordinates as a parameter
-        navigation.navigate(returnRoute, { selectedCoords: markerCoords });
+        console.log(`Setting hardcoded location to ${returnRoute}:`, markerCoords);
+
+        // Optional: Animate to location before navigating
+        if (mapRef.current && mapRegion) {
+            mapRef.current.animateToRegion({
+                latitude: markerCoords.latitude,
+                longitude: markerCoords.longitude,
+                latitudeDelta: mapRegion.latitudeDelta,
+                longitudeDelta: mapRegion.longitudeDelta,
+            }, 500);
+        }
+
+        setTimeout(() => {
+            // Return only latitude and longitude
+            navigation.navigate(returnRoute, {
+                selectedCoords: {
+                    latitude: markerCoords.latitude,
+                    longitude: markerCoords.longitude
+                }
+            });
+        }, 600);
     };
 
     // --- Render Logic ---
-    // Show specific loading message while fetching permissions/location
     if (loading) {
-        return <View style={styles.center}><ActivityIndicator size="large" color="#0096FF" /><Text style={styles.loadingText}>{loadingMessage}</Text></View>;
+        return <View style={styles.centerScreen}><ActivityIndicator size="large" color="#0096FF" /><Text style={styles.loadingText}>{loadingMessage}</Text></View>;
     }
-
-    // Show message if permission was denied
-    if (locationPermission === false) {
-         return <View style={styles.center}><Text>Location permission denied.</Text></View>;
-    }
-
-    // Show a loader briefly if region is not yet calculated (should be very short now)
     if (!mapRegion) {
-       return <View style={styles.center}><ActivityIndicator size="large" color="#0096FF" /><Text style={styles.loadingText}>Preparing map...</Text></View>;
+       return <View style={styles.centerScreen}><ActivityIndicator size="large" color="#0096FF" /><Text style={styles.loadingText}>Preparing map data...</Text></View>;
     }
 
-    // Render the map once loading is false and region is available
     return (
         <View style={styles.container}>
             <MapView
                 ref={mapRef}
                 style={styles.map}
-                provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined} // Use Google Maps provider on Android
-                initialRegion={mapRegion} // Set initial region - map will animate to this via useEffect
-                showsUserLocation={true} // Show blue dot for user's current actual location
-                showsMyLocationButton={true} // Simple button to jump to current location
-                onMapReady={() => { console.log("Map is Ready"); setIsMapReady(true); }} // Track when map tiles are loaded
+                provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+                initialRegion={mapRegion} // Map will center on the hardcoded location
+                showsUserLocation={locationPermission ?? false}
+                showsMyLocationButton={locationPermission ?? false}
+                onMapReady={() => { console.log("Map is Ready"); setIsMapReady(true); }}
             >
-                {/* --- Marker is now UNCOMMENTED --- */}
-                {/*markerCoords && (
+                {/* --- Marker component is now UNCOMMENTED --- */}
+                {/* This will display the pin at the hardcoded location IF running in a compatible environment (Dev Build) */}
+                {markerCoords && (
                     <Marker
-                        coordinate={markerCoords}
-                        draggable // Allow user to drag the marker
-                        onDragEnd={handleMarkerDragEnd}
-                        title="Selected Location"
-                        description="Drag to adjust position" // Added description
-                        pinColor="red" // Standard red pin
-                    />
+                        coordinate={markerCoords} // Uses HARDCODED_LOCATION
+                        title={HARDCODED_LOCATION.title}
+                        description={HARDCODED_LOCATION.description}
+                        pinColor="red" // Or your preferred color
+                        // Not draggable
+                    >
+                        {/* Optional: Custom Callout for more detailed info window */}
+                        {/* <Callout tooltip>
+                            <View style={styles.calloutView}>
+                                <Text style={styles.calloutTitle}>{HARDCODED_LOCATION.title}</Text>
+                                <Text>{HARDCODED_LOCATION.description}</Text>
+                            </View>
+                        </Callout> */}
+                    </Marker>
                 )}
                 {/* --- End Marker --- */}
             </MapView>
 
-            {/* Set Location Button */}
-            {/* Disable button if marker coords aren't set */}
+            {/* Removed CenterPinMarker component */}
+
             <TouchableOpacity style={styles.setLocationButton} onPress={handleSetLocation} disabled={!markerCoords}>
-                <Text style={styles.setLocationButtonText}>Set This Location</Text>
+                <Text style={styles.setLocationButtonText}>Confirm This Location</Text>
             </TouchableOpacity>
         </View>
     );
@@ -166,9 +148,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     map: {
-        flex: 1, // Map takes up available space
+        flex: 1,
     },
-    center: {
+    centerScreen: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
@@ -178,31 +160,36 @@ const styles = StyleSheet.create({
       marginTop: 10,
       fontSize: 16,
       color: '#555',
-      textAlign: 'center', // Center text
+      textAlign: 'center',
     },
+    // Removed centerPinContainer and centerPinImage styles
     setLocationButton: {
-        position: 'absolute', // Position button over the map
+        position: 'absolute',
         bottom: 40,
         left: 30,
         right: 30,
-        height: 55, // Slightly taller button
-        backgroundColor: '#007AFF', // iOS blue - adjust as needed
+        height: 55,
+        backgroundColor: '#007AFF',
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 10, // More rounded corners
+        borderRadius: 10,
         paddingVertical: 12,
         paddingHorizontal: 20,
-        elevation: 4, // Android shadow
-        shadowColor: '#000', // iOS shadow
+        elevation: 4,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
     },
     setLocationButtonText: {
         color: '#fff',
-        fontSize: 18, // Larger font
-        fontWeight: 'bold', // Bold text
+        fontSize: 18,
+        fontWeight: 'bold',
     },
+    // Optional styles for custom callout
+    // calloutView: { ... },
+    // calloutTitle: { ... }
 });
 
 export default MapScreen;
+

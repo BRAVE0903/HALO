@@ -1,53 +1,58 @@
 // src/screens/RoleSelectionScreen.tsx
+// Updated: Colors changed based on the provided palette.
 
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, SafeAreaView
 } from 'react-native';
-import { Checkbox } from 'react-native-paper';
-// --- Firebase Imports ---
+import { RadioButton } from 'react-native-paper';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
-// --- Navigation Imports ---
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-// Ensure path is correct
-import { AuthStackParamList } from '../navigation/AuthNavigator';
+import { AuthStackParamList } from '../navigation/AuthNavigator'; // Ensure path is correct
 
-// Define navigation prop type
+// Define the color palette
+const PALETTE = {
+    background: '#FBF6E9',
+    lightAccent: '#E3F0AF',
+    primary: '#5DB996',
+    darkPrimary: '#118B50',
+    white: '#FFFFFF',
+    errorRed: '#D9534F',
+    inputBorder: '#cccccc', // Kept for consistency if other screens use it
+    cardBorder: '#E0E0E0', // A light grey for card borders
+    textPrimary: '#333333',
+    textSecondary: '#666666',
+};
+
 type RoleSelectionScreenNavigationProp = StackNavigationProp<
     AuthStackParamList,
     'RoleSelection'
 >;
 
-// Component function
 const RoleSelectionScreen = () => {
     const [selectedRole, setSelectedRole] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const navigation = useNavigation<RoleSelectionScreenNavigationProp>();
 
-    // --- Initialize Firebase ---
     const auth = getAuth();
     const firestore = getFirestore();
     const initialUser = auth.currentUser;
 
-    // Roles data
     const roles = [
         { id: 'donor', title: 'Donor', description: 'Donate some food to the needful' },
-        { id: 'receiver', title: 'Receiver', description: 'Pickup and deliver food to the needful' },
-        { id: 'volunteer', title: 'Volunteer', description: 'Pickup and deliver food to the needful' }
+        { id: 'receiver', title: 'Receiver', description: 'Receive food donations' },
     ];
 
-    // Check user status and configure header
     useEffect(() => {
         if (!initialUser) {
             console.warn('No authenticated user on RoleSelectionScreen. Redirecting...');
             navigation.replace('Login');
         }
-        navigation.setOptions({ headerLeft: () => null }); // Hide back button
+        navigation.setOptions({ headerLeft: () => null });
     }, [initialUser, navigation]);
 
-    // Function to save role and navigate
     const handleContinue = async () => {
         const currentUser = auth.currentUser;
         if (!selectedRole) {
@@ -63,58 +68,67 @@ const RoleSelectionScreen = () => {
         setIsLoading(true);
         try {
             const userDocRef = doc(firestore, 'users', currentUser.uid);
-            // Save the selected role itself
             await setDoc(userDocRef, { role: selectedRole }, { merge: true });
             console.log(`Role '${selectedRole}' saved for user ${currentUser.uid}`);
 
-            // --- UPDATED NAVIGATION LOGIC ---
             if (selectedRole === 'donor') {
-                navigation.replace('DonorDetails'); // Go to Donor Details
+                navigation.replace('DonorDetails');
             } else if (selectedRole === 'receiver') {
-                 navigation.replace('ReceiverDetails'); // Go to Receiver Details
-            } else if (selectedRole === 'volunteer') {
-                 // Navigate to volunteer screen or dashboard (Needs creation)
-                 Alert.alert("Setup Complete", "Volunteer role selected. Next screen TBD.");
-                 // Example: Replace 'DonorDetails' with 'VolunteerDashboard' or 'Home' once created
-                 navigation.replace('DonorDetails'); // Placeholder navigation
+                 navigation.replace('ReceiverDetails');
             } else {
-                 // Fallback navigation if needed
-                 navigation.replace('DonorDetails'); // Placeholder navigation
+                 console.error("Invalid role selected:", selectedRole);
+                 navigation.replace('Login');
             }
-            // --- END UPDATED NAVIGATION LOGIC ---
-
         } catch (error: any) {
             console.error("Error saving role or navigating: ", error);
             Alert.alert('Error', `Failed to process role selection: ${error.message}`);
-            setIsLoading(false); // Stop loading on error
+            setIsLoading(false);
         }
-        // No setIsLoading(false) needed on success because screen is replaced
     };
 
-    // Component JSX (Copied from previous version)
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
                 <Text style={styles.title}>Welcome!</Text>
                 <Text style={styles.subtitle}>Please select your primary role in the app.</Text>
-                <View style={styles.rolesContainer}>
-                    <Text style={styles.sectionTitle}>Choose your role</Text>
-                    {roles.map((role) => (
-                        <TouchableOpacity key={role.id} style={[ styles.roleCard, selectedRole === role.id && styles.selectedRole ]} onPress={() => setSelectedRole(role.id)} >
-                            <View style={styles.checkboxContainer}>
-                                <Checkbox status={selectedRole === role.id ? 'checked' : 'unchecked'} color="#0096FF" />
-                                <View>
-                                    <Text style={styles.roleTitle}>{role.title}</Text>
-                                    <Text style={styles.roleDescription}>{role.description}</Text>
-                                </View>
+
+                <RadioButton.Group onValueChange={newValue => setSelectedRole(newValue)} value={selectedRole}>
+                    <View style={styles.rolesContainer}>
+                        <Text style={styles.sectionTitle}>Choose your role</Text>
+                        {roles.map((role) => (
+                            <View
+                                key={role.id}
+                                // Apply selected style to the container for visual feedback
+                                style={[
+                                    styles.roleItemContainer,
+                                    selectedRole === role.id && styles.selectedRoleItemContainer
+                                ]}
+                            >
+                                <RadioButton.Item
+                                    label={role.title}
+                                    value={role.id}
+                                    status={selectedRole === role.id ? 'checked' : 'unchecked'}
+                                    onPress={() => setSelectedRole(role.id)}
+                                    labelStyle={styles.roleTitle}
+                                    style={styles.radioButtonItem}
+                                    position="leading"
+                                    color={PALETTE.primary} // Color when checked
+                                    uncheckedColor={PALETTE.darkPrimary} // Color when unchecked
+                                />
+                                <Text style={styles.roleDescription}>{role.description}</Text>
                             </View>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                        ))}
+                    </View>
+                </RadioButton.Group>
+
                 {isLoading ? (
-                     <ActivityIndicator size="large" color="#0096FF" style={styles.loader} />
+                     <ActivityIndicator size="large" color={PALETTE.primary} style={styles.loader} />
                  ) : (
-                     <TouchableOpacity style={[styles.continueButton, !selectedRole ? styles.disabledButton : {}]} onPress={handleContinue} disabled={!selectedRole || isLoading} >
+                     <TouchableOpacity
+                         style={[styles.continueButton, !selectedRole ? styles.disabledButton : {}]}
+                         onPress={handleContinue}
+                         disabled={!selectedRole || isLoading}
+                     >
                          <Text style={styles.continueButtonText}>Continue</Text>
                      </TouchableOpacity>
                  )}
@@ -123,24 +137,86 @@ const RoleSelectionScreen = () => {
     );
 };
 
-// Styles (Copied from previous version)
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: '#fff', },
-    container: { flex: 1, backgroundColor: '#fff', padding: 20, },
-    title: { fontSize: 24, fontWeight: 'bold', marginBottom: 8, textAlign: 'center', },
-    subtitle: { fontSize: 16, color: '#666', marginBottom: 30, textAlign: 'center', },
-    sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 16, },
-    rolesContainer: { marginTop: 20, flex: 1, },
-    roleCard: { borderWidth: 1, borderColor: '#E8E8E8', borderRadius: 8, padding: 16, marginBottom: 12, },
-    selectedRole: { borderColor: '#0096FF', backgroundColor: '#F0F9FF', },
-    checkboxContainer: { flexDirection: 'row', alignItems: 'center', },
-    roleTitle: { fontSize: 16, fontWeight: '500', marginBottom: 4, },
-    roleDescription: { fontSize: 14, color: '#666', },
-    continueButton: { backgroundColor: '#0096FF', borderRadius: 8, padding: 16, alignItems: 'center', marginTop: 20, },
-    disabledButton: { backgroundColor: '#B0DFFF', },
-    continueButtonText: { color: '#fff', fontSize: 16, fontWeight: '600', },
-    loader: { marginTop: 20, }
+    safeArea: {
+        flex: 1,
+        backgroundColor: PALETTE.background, // Updated background
+    },
+    container: {
+        flex: 1,
+        backgroundColor: PALETTE.background, // Updated background
+        padding: 20,
+    },
+    title: {
+        fontSize: 28, // Increased size
+        fontWeight: 'bold',
+        marginBottom: 10, // Adjusted margin
+        textAlign: 'center',
+        color: PALETTE.darkPrimary, // Updated color
+    },
+    subtitle: {
+        fontSize: 16,
+        color: PALETTE.textSecondary, // Using textSecondary from palette
+        marginBottom: 30,
+        textAlign: 'center',
+    },
+    sectionTitle: {
+        fontSize: 20, // Increased size
+        fontWeight: '600',
+        marginBottom: 16,
+        color: PALETTE.darkPrimary, // Updated color
+    },
+    rolesContainer: {
+        marginTop: 10, // Adjusted margin
+        // flex: 1, // Can be removed if RadioButton.Group handles height
+    },
+    roleItemContainer: {
+        marginBottom: 15,
+        borderWidth: 1,
+        borderColor: PALETTE.cardBorder, // Updated border color
+        borderRadius: 8,
+        paddingBottom: 10,
+        backgroundColor: PALETTE.white, // Card background
+    },
+    selectedRoleItemContainer: { // Style for the selected role card
+        borderColor: PALETTE.primary, // Highlight with primary color
+        backgroundColor: PALETTE.lightAccent, // Use light accent for selected background
+    },
+    radioButtonItem: {
+        paddingVertical: 8,
+        // backgroundColor: 'transparent', // Ensure it's transparent if container has color
+    },
+    roleTitle: {
+        fontSize: 18, // Increased size
+        fontWeight: '500',
+        color: PALETTE.textPrimary, // Updated color
+    },
+    roleDescription: {
+        fontSize: 14,
+        color: PALETTE.textSecondary, // Updated color
+        paddingLeft: 50,
+        paddingRight: 16,
+        marginTop: -5, // Adjust to align better with RadioButton.Item's internal padding
+    },
+    continueButton: {
+        backgroundColor: PALETTE.primary, // Updated button color
+        borderRadius: 8,
+        paddingVertical: 16, // Adjusted padding
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    disabledButton: {
+        backgroundColor: PALETTE.lightAccent, // Use light accent for disabled
+        opacity: 0.7,
+    },
+    continueButtonText: {
+        color: PALETTE.white, // Updated text color
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    loader: {
+        marginTop: 20,
+    }
 });
 
-// Use default export
 export default RoleSelectionScreen;

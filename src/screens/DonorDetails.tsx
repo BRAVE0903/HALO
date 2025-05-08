@@ -1,5 +1,5 @@
 // src/screens/DonorDetailsScreen.tsx
-// Updated: Navigates to Login after successful save.
+// Updated: Removed Map Button and related location logic.
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -8,7 +8,8 @@ import {
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { firebaseConfig } from '../firebaseConfig'; // Adjust path if needed
-import * as Location from 'expo-location'; // Import expo-location
+// Removed expo-location import as it's no longer needed here
+// import * as Location from 'expo-location';
 
 // --- Types ---
 type DonorCategory = 'Restaurant' | 'Bakery' | 'Individual' | 'Business' | null;
@@ -34,7 +35,8 @@ const SimplePicker = ({ label, options, selectedValue, onValueChange }: SimplePi
 // --- End SimplePicker ---
 
 // --- Main Screen Component ---
-const DonorDetailsScreen = ({ navigation, route }: any) => {
+// Removed 'route' prop as it's no longer needed for map params
+const DonorDetailsScreen = ({ navigation }: any) => {
 
     // --- State Variables ---
     const [loading, setLoading] = useState<boolean>(true);
@@ -49,7 +51,7 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
     const [address, setAddress] = useState<string>('');
     const [pinCode, setPinCode] = useState<string>('');
     const [city, setCity] = useState<string>('');
-    const [selectedCoords, setSelectedCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+    // Removed selectedCoords state
     // --- End State Variables ---
 
     // --- Initialize Firebase Services ---
@@ -73,14 +75,14 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
                 setContactName(data.contactName || '');
                 setMobileNumber(data.mobileNumber || '');
                 setEmailId(data.emailId || '');
-                setAddress(data.address || '');
-                setPinCode(data.pinCode || '');
-                setCity(data.city || '');
-                setSelectedCoords(data.locationCoords || null);
+                setAddress(data.address || ''); // Still load address if saved manually
+                setPinCode(data.pinCode || ''); // Still load pinCode if saved manually
+                setCity(data.city || '');       // Still load city if saved manually
+                // Removed loading locationCoords
             } else {
                 setDonorCategory(null); setDonorName(''); setContactName('');
                 setMobileNumber(''); setEmailId(''); setAddress(''); setPinCode(''); setCity('');
-                setSelectedCoords(null);
+                // Removed resetting selectedCoords
             }
             setLoading(false);
         }, (err) => {
@@ -91,65 +93,13 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
     }, [currentUser, db]);
     // --- End useEffect Load ---
 
-    // --- useEffect to handle coordinates returned from MapScreen ---
-    useEffect(() => {
-        if (route.params?.selectedCoords) {
-            const { latitude, longitude } = route.params.selectedCoords;
-            console.log('Received Coords (Donor):', latitude, longitude);
-            setSelectedCoords({ latitude, longitude });
-            fillAddressFromCoords(latitude, longitude);
-            navigation.setParams({ selectedCoords: null });
-        }
-    }, [route.params?.selectedCoords, navigation]);
-    // --- End useEffect Handle Coords ---
+    // --- Removed useEffect for handling map coordinates ---
 
 
-    // --- Map Navigation Function ---
-    const handlePinLocation = () => {
-        if (!route || !route.name) {
-            console.error("Route information is not available to determine return route.");
-            Alert.alert("Error", "Cannot open map, navigation context missing.");
-            return;
-        }
-        navigation.navigate('MapScreen', {
-             returnRoute: route.name,
-             initialCoords: selectedCoords
-        });
-    };
-    // --- End Map Navigation ---
+    // --- Removed Map Navigation Function ---
 
 
-    // --- Optional: Reverse Geocode Function ---
-     const fillAddressFromCoords = async (latitude: number, longitude: number) => {
-        setLoading(true);
-        try {
-            let { status } = await Location.getForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                 Alert.alert("Permission Denied", "Location permission is needed to fetch address details.");
-                 setLoading(false); return;
-            }
-            let addressParts = await Location.reverseGeocodeAsync({ latitude, longitude });
-            if (addressParts && addressParts.length > 0) {
-                const addr = addressParts[0];
-                console.log('Reverse Geocoded Address (Donor):', addr);
-                setAddress(`${addr.streetNumber || ''} ${addr.street || ''}`.trim());
-                setCity(addr.city || addr.district || addr.subregion || '');
-                setPinCode(addr.postalCode || '');
-            } else {
-                 Alert.alert("Address Not Found", "Could not find address details for the selected location.");
-            }
-        } catch (error: any) {
-            console.error("Reverse geocoding failed (Donor):", error);
-             // Use a more user-friendly alert here from previous step
-             Alert.alert(
-                "Address Lookup Failed",
-                "Could not fetch address details for the selected location. Please check your internet connection and try again, or enter the address manually."
-            );
-        } finally {
-             setLoading(false);
-        }
-    };
-    // --- End Reverse Geocode ---
+    // --- Removed Reverse Geocode Function ---
 
 
     // --- handleSaveChanges to save donor data ---
@@ -164,7 +114,7 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
 
         try {
             const userDocRef = doc(db, 'users', currentUser.uid);
-            // Data structure
+            // Data structure (removed locationCoords)
             const dataToSave = {
                 role: 'Donor',
                 donorCategory: donorCategory,
@@ -175,7 +125,7 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
                 address: address || null,
                 pinCode: pinCode || null,
                 city: city || null,
-                locationCoords: selectedCoords || null,
+                // locationCoords: selectedCoords || null, // Removed
                 profileUpdatedAt: new Date()
             };
 
@@ -185,13 +135,9 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
             Alert.alert(
                 'Success',
                 'Donor details saved.',
-                [ // Add button to Alert for better UX before navigating
-                    { text: "OK", onPress: () => navigation.popToTop() } // Navigate after OK is pressed
-                ],
-                { cancelable: false } // Prevent dismissing alert by tapping outside
+                [ { text: "OK", onPress: () => navigation.popToTop() } ], // Navigate back to Login on OK
+                { cancelable: false }
             );
-             // --- MODIFICATION: Removed direct navigation call here, moved to Alert button ---
-            // navigation.popToTop(); // Go back to the first screen in the stack (Login)
 
         } catch (e: any) {
             setSaving(false); console.error('Error saving donor details:', e);
@@ -212,7 +158,7 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
 
             {error && <Text style={styles.errorText}>{error}</Text>}
 
-            {/* --- Donor Picker --- */}
+            {/* Donor Picker */}
             <SimplePicker
                 label="Donor Type *"
                 options={['Restaurant', 'Bakery', 'Individual', 'Business']}
@@ -220,7 +166,7 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
                 onValueChange={setDonorCategory}
             />
 
-            {/* --- Donor Fields --- */}
+            {/* Donor Fields */}
              <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Donor Name *</Text>
                 <TextInput style={styles.input} placeholder="Enter Donor Name" value={donorName} onChangeText={setDonorName} />
@@ -249,12 +195,9 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
                  <Text style={styles.label}>City (Optional)</Text>
                  <TextInput style={styles.input} placeholder="Enter City" value={city} onChangeText={setCity} />
              </View>
-            {/* --- End Fields --- */}
+            {/* End Fields */}
 
-            {/* --- Map Button --- */}
-            <TouchableOpacity style={styles.pinButton} onPress={handlePinLocation}>
-                <Text style={styles.pinButtonText}>Pin Location by map</Text>
-            </TouchableOpacity>
+            {/* --- Removed Map Button --- */}
 
             {/* Submit Button */}
             <TouchableOpacity style={styles.button} onPress={handleSaveChanges} disabled={saving || !donorCategory || !donorName}>
@@ -267,6 +210,7 @@ const DonorDetailsScreen = ({ navigation, route }: any) => {
 
 
 // --- Styles ---
+// Removed pinButton styles
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8F8F8', },
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F8F8'},
@@ -283,23 +227,7 @@ const styles = StyleSheet.create({
     pickerOptionSelected: { backgroundColor: '#E6F4FF', borderColor: '#0096FF' },
     pickerOptionText: { color: '#333' },
     pickerOptionTextSelected: { color: '#0096FF', fontWeight: 'bold' },
-    pinButton: {
-        height: 50,
-        width: '100%',
-        borderColor: '#0096FF',
-        borderWidth: 1,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 8,
-        marginTop: 10,
-        marginBottom: 10,
-    },
-    pinButtonText: {
-        color: '#0096FF',
-        fontSize: 16,
-        fontWeight: '600',
-    },
+    // pinButton styles removed
 });
 // --- End Styles ---
 

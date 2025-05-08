@@ -1,5 +1,5 @@
 // src/navigation/AuthNavigator.tsx
-// Updated: Added Homepage and its params
+// Updated: Corrected imports and parameter list definitions.
 
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -7,14 +7,14 @@ import { createStackNavigator } from '@react-navigation/stack';
 /* --- Imports --- */
 import LoginScreen from '../screens/LoginScreen';
 import { default as ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
-import { RegisterScreen } from '../screens/RegisterScreen'; // Assumes named export
+// Corrected to named import if RegisterScreen.tsx uses 'export const RegisterScreen'
+import { RegisterScreen } from '../screens/RegisterScreen';
 import RoleSelectionScreen from '../screens/RoleSelectionScreen';
-import DonorDetailsScreen from '../screens/DonorDetails'; // Assuming correct filename
+// Assuming filenames are DonorDetailsScreen.tsx and ReceiverDetailsScreen.tsx
+import DonorDetailsScreen from '../screens/DonorDetails';
 import ReceiverDetailsScreen from '../screens/ReceiverDetailsScreen';
 import MapScreen from '../screens/MapScreen';
-// --- ADDED Homepage import ---
 import Homepage from '../screens/Homepage';
-// --- End Homepage import ---
 
 
 // Define Param List type
@@ -23,18 +23,25 @@ export type AuthStackParamList = {
     Register: undefined;
     ForgotPassword: undefined;
     RoleSelection: undefined;
-    DonorDetails: undefined; // Or params: { selectedCoords?: ... } if needed directly
-    ReceiverDetails: { selectedCoords?: { latitude: number; longitude: number } | null } | undefined;
-    MapScreen: {
-        returnRoute: keyof AuthStackParamList;
+    DonorDetails: { // Params for DonorDetails
+        selectedCoords?: { latitude: number; longitude: number } | null;
+        returnRoute?: string | null; // Or keyof AuthStackParamList
+    } | undefined; // Make the entire params object optional if screen can be called without any
+    ReceiverDetails: { // Params for ReceiverDetails
+        selectedCoords?: { latitude: number; longitude: number } | null;
+        returnRoute?: string | null; // Or keyof AuthStackParamList
+    } | undefined; // Make the entire params object optional
+    MapScreen: { // Params for MapScreen
+        returnRoute: keyof AuthStackParamList; // Route name to return to
         initialCoords?: { latitude: number; longitude: number } | null;
     };
-    // --- ADDED Homepage params ---
-    Homepage: { // Define params expected by Homepage
+    Homepage: { // Params for Homepage
         name: string;
         role: string;
+        // Optional params if navigating back from MapScreen to Homepage
+        selectedCoords?: { latitude: number; longitude: number } | null;
+        returnRoute?: string | null; // Or keyof AuthStackParamList
     };
-    // --- End Homepage params ---
 };
 
 const Stack = createStackNavigator<AuthStackParamList>();
@@ -43,11 +50,31 @@ const Stack = createStackNavigator<AuthStackParamList>();
 const AuthNavigator = () => {
     return (
         <Stack.Navigator initialRouteName="Login">
-            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Create Account' }} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Reset Password' }}/>
-            <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} options={{ title: 'Choose Your Role' }} />
-            <Stack.Screen name="DonorDetails" component={DonorDetailsScreen} options={{ title: 'Donor Details' }} />
+            <Stack.Screen
+                name="Login"
+                component={LoginScreen}
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="Register"
+                component={RegisterScreen}
+                options={{ title: 'Create Account' }}
+            />
+            <Stack.Screen
+                name="ForgotPassword"
+                component={ForgotPasswordScreen}
+                options={{ title: 'Reset Password' }}
+            />
+            <Stack.Screen
+                name="RoleSelection"
+                component={RoleSelectionScreen}
+                options={{ title: 'Choose Your Role' }}
+            />
+            <Stack.Screen
+                name="DonorDetails"
+                component={DonorDetailsScreen}
+                options={{ title: 'Donor Details' }}
+            />
             <Stack.Screen
                 name="ReceiverDetails"
                 component={ReceiverDetailsScreen}
@@ -58,14 +85,11 @@ const AuthNavigator = () => {
                 component={MapScreen}
                 options={{ title: 'Select Location' }}
             />
-            {/* --- ADDED Homepage Screen --- */}
             <Stack.Screen
                 name="Homepage"
                 component={Homepage}
-                // Optional: Customize header, maybe hide back button if resetting
-                options={{ title: 'Home', headerLeft: () => null }}
+                options={{ title: 'Home', headerLeft: () => null }} // Hides back button on Homepage
             />
-             {/* --- End Homepage Screen --- */}
         </Stack.Navigator>
     );
 };
