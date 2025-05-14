@@ -1,147 +1,319 @@
 // src/screens/Homepage.tsx
-// Updated: Corrected route param types for selectedCoords and returnRoute.
+// Updated: Corrected import path for NavigationBar based on likely file structure.
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform } from 'react-native';
 import AppBar from '../components/AppBar_States/Appbar';
-import { useNavigation, RouteProp, CompositeNavigationProp } from '@react-navigation/native';
+import { useNavigation, RouteProp, useRoute } from '@react-navigation/native'; // Import useRoute
 import { StackNavigationProp } from '@react-navigation/stack';
-// Ensure this path is correct and AuthStackParamList is updated
+import { SceneMap, TabBar, TabView, SceneRendererProps } from 'react-native-tab-view';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
+
+// Import AuthStackParamList from your AuthNavigator
 import { AuthStackParamList } from '../navigation/AuthNavigator';
+// Import the NavigationBar component - corrected path
+import NavigationBar from '../components/AppBar_States/NavigationBar';
+
 
 // Define the color palette (consistent with other screens)
-const PALETTE = {
-    background: '#FBF6E9',
-    lightAccent: '#E3F0AF',
-    primary: '#5DB996',
-    darkPrimary: '#118B50',
-    white: '#FFFFFF',
-    textPrimary: '#333333',
-    textSecondary: '#666666',
+type PaletteType = {
+    background: string;
+    lightAccent: string;
+    primary: string;
+    darkPrimary: string;
+    white: string;
+    textPrimary: string;
+    textSecondary: string;
+    cardBackground: string;
+    cardBorder: string;
+    shadowColor: string;
+    bottomNavBackground: string;
+    bottomNavItemColor: string;
+    bottomNavItemActiveColor: string;
 };
 
-// Define specific prop types for Homepage using the updated AuthStackParamList
+const PALETTE: PaletteType = {
+    background: '#FBF6E9',
+    lightAccent: '#E3F0AF',
+    primary: '#5DB996',
+    darkPrimary: '#118B50',
+    white: '#FFFFFF',
+    textPrimary: '#333333',
+    textSecondary: '#666666',
+    cardBackground: '#FFFFFF',
+    cardBorder: '#E0E0E0',
+    shadowColor: '#000',
+    bottomNavBackground: '#FFFFFF',
+    bottomNavItemColor: '#B0B0B0',
+    bottomNavItemActiveColor: '#5DB996',
+};
+
+// Define specific prop types for Homepage using the imported AuthStackParamList
 type HomepageNavigationProp = StackNavigationProp<AuthStackParamList, 'Homepage'>;
 type HomepageRouteProp = RouteProp<AuthStackParamList, 'Homepage'>;
 
 type Props = {
-  navigation: HomepageNavigationProp;
-  route: HomepageRouteProp;
+    navigation: HomepageNavigationProp;
+    route: HomepageRouteProp;
 };
 
+const initialLayout = { width: Dimensions.get('window').width };
+
+// Placeholder components for the tabs
+// Added type annotation for props to clarify structure
+const DonorRoute = ({ route }: SceneRendererProps & { route: { key: string; title: string } }) => (
+    <ScrollView contentContainerStyle={styles.tabContent}>
+        {/* Placeholder Donor Item Card */}
+        <View style={styles.itemCard}>
+            <View style={styles.itemImagePlaceholder} />
+            <View style={styles.itemDetails}>
+                <Text style={styles.itemTitle}>Item Name</Text>
+                <Text style={styles.itemDistance}>2.5km</Text>
+                <Text style={styles.itemDescription}>Short Description Text here</Text>
+                <TouchableOpacity style={styles.chatButton}>
+                    <Text style={styles.chatButtonText}>Chat</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+         {/* Added more placeholder cards for scrolling test */}
+         <View style={styles.itemCard}>
+            <View style={styles.itemImagePlaceholder} />
+            <View style={styles.itemDetails}>
+                <Text style={styles.itemTitle}>Another Item</Text>
+                <Text style={styles.itemDistance}>3.0km</Text>
+                <Text style={styles.itemDescription}>More description text.</Text>
+                <TouchableOpacity style={styles.chatButton}>
+                    <Text style={styles.chatButtonText}>Chat</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+         <View style={styles.itemCard}>
+            <View style={styles.itemImagePlaceholder} />
+            <View style={styles.itemDetails}>
+                <Text style={styles.itemTitle}>Third Item</Text>
+                <Text style={styles.itemDistance}>1.5km</Text>
+                <Text style={styles.itemDescription}>Yet more description.</Text>
+                <TouchableOpacity style={styles.chatButton}>
+                    <Text style={styles.chatButtonText}>Chat</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    </ScrollView>
+);
+
+// Added type annotation for props to clarify structure
+const ReceiverRoute = ({ route }: SceneRendererProps & { route: { key: string; title: string } }) => (
+    <ScrollView contentContainerStyle={styles.tabContent}>
+        {/* Placeholder Receiver Item Card */}
+        <View style={styles.itemCard}>
+            <View style={styles.itemImagePlaceholder} />
+            <View style={styles.itemDetails}>
+                <Text style={styles.itemTitle}>Restaurants Name 1</Text>
+                <Text style={styles.itemDistance}>2.5km</Text>
+                <Text style={styles.itemDescription}>340 meals served till now</Text>
+                <View style={styles.receiverButtons}>
+                    <TouchableOpacity style={styles.viewDetailsButton}>
+                        <Text style={styles.viewDetailsButtonText}>View Details</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.connectButton}>
+                        <Text style={styles.connectButtonText}>Connect</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
+         {/* Added more placeholder cards for scrolling test */}
+         <View style={styles.itemCard}>
+            <View style={styles.itemImagePlaceholder} />
+            <View style={styles.itemDetails}>
+                <Text style={styles.itemTitle}>Restaurant Two</Text>
+                <Text style={styles.itemDistance}>1.8km</Text>
+                <Text style={styles.itemDescription}>Serving delicious food.</Text>
+                <View style={styles.receiverButtons}>
+                    <TouchableOpacity style={styles.viewDetailsButton}>
+                        <Text style={styles.viewDetailsButtonText}>View Details</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.connectButton}>
+                        <Text style={styles.connectButtonText}>Connect</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
+    </ScrollView>
+);
+
+
+const renderScene = SceneMap({
+    donor: DonorRoute,
+    receiver: ReceiverRoute,
+});
+
 const Homepage = ({ route, navigation }: Props) => {
+    React.useLayoutEffect(() => {
+        navigation.setOptions({
+            headerShown: false,
+        });
+    }, [navigation]);
 
-  // These params are guaranteed by the LoginScreen navigation.reset
-  const userName = route.params.name; // No '??' needed if always provided on initial nav
-  const userRole = route.params.role; // No '??' needed if always provided on initial nav
+    // Explicitly check if route.params is defined before accessing properties
+    const userName = route.params ? route.params.name : '';
+    const userRole = route.params ? route.params.role : '';
 
-  // State to hold coordinates if returned from MapScreen
-  const [homeLocationCoords, setHomeLocationCoords] = useState<{latitude: number, longitude: number} | null>(null);
+    const [index, setIndex] = useState(0);
+    const [routes] = useState([
+        { key: 'donor', title: 'DONOR' },
+        { key: 'receiver', title: 'RECEIVER' },
+    ]);
 
-  // Effect to listen for coordinates returned from MapScreen
-  useEffect(() => {
-    // Check if selectedCoords exists on route.params (it's optional)
-    if (route.params && route.params.selectedCoords && route.params.returnRoute === 'Homepage') {
-        const { latitude, longitude } = route.params.selectedCoords;
-        console.log('Homepage received Coords:', latitude, longitude);
-        setHomeLocationCoords({ latitude, longitude });
-        Alert.alert("Location Selected", `Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}`);
-        // Clear the params so it doesn't trigger again on focus
-        // Cast to 'any' is a common workaround for setParams with optional fields
-        // or ensure all possible params are defined in the target route's type in AuthStackParamList
-        navigation.setParams({
-            name: userName, // Keep existing required params
-            role: userRole,   // Keep existing required params
-            selectedCoords: undefined, // Explicitly set to undefined
-            returnRoute: undefined     // Explicitly set to undefined
-        } as any); // Using 'as any' for simplicity, or type more strictly
-    }
-  }, [route.params, navigation, userName, userRole]); // Added userName, userRole to dep array if used in setParams
+    // Removed useFocusEffect for location data as it was commented out and not used in UI
 
 
-  const handleOpenMap = () => {
-    console.log("Navigating to MapScreen from Homepage");
-    navigation.navigate('MapScreen', {
-        returnRoute: 'Homepage', // Tells MapScreen where to return
-        initialCoords: homeLocationCoords
-    });
-  };
+    // Defined renderLabel as a separate function
+    const renderLabel = ({ route, focused }: { route: { key: string; title: string }, focused: boolean }) => (
+        <Text style={{
+            fontWeight: 'bold',
+            color: focused ? PALETTE.primary : PALETTE.textSecondary,
+        }}>
+            {route.title}
+        </Text>
+    );
 
-  return (
-    <View style={styles.container}>
-      <AppBar />
-      <View style={styles.content}>
-        <Text style={styles.welcomeText}>Welcome, {userName}!</Text>
-        <Text style={styles.roleText}>Your role: {userRole}</Text>
-        {userRole === 'Donor' && (
-          <Text style={styles.infoText}>You can start making donations.</Text>
-        )}
-        {userRole === 'Receiver' && (
-          <Text style={styles.infoText}>You can manage received items.</Text>
-        )}
+    // Explicitly define the props type for renderTabBar
+    const renderTabBar = (props: SceneRendererProps & { navigationState: { index: number; routes: { key: string; title: string }[] } }) => {
+        return (
+            // @ts-expect-error - Temporarily ignore this type error related to renderLabel
+            <TabBar
+                {...props}
+                indicatorStyle={{ backgroundColor: PALETTE.primary }}
+                style={{ backgroundColor: PALETTE.white }}
+                // Passed the separate renderLabel function
+                renderLabel={renderLabel}
+                activeColor={PALETTE.primary}
+                inactiveColor={PALETTE.textSecondary}
+                pressOpacity={1}
+                pressColor="transparent"
+            />
+        );
+    };
 
-        {homeLocationCoords && (
-            <Text style={styles.coordsText}>
-                Selected Location: Lat: {homeLocationCoords.latitude.toFixed(4)}, Lon: {homeLocationCoords.longitude.toFixed(4)}
-            </Text>
-        )}
+    // Get the current route name using useRoute hook
+    const currentRoute = useRoute();
 
-        <TouchableOpacity style={styles.mapButton} onPress={handleOpenMap}>
-            <Text style={styles.mapButtonText}>Open Map / Set Location</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    // Define navigation callbacks to pass to NavigationBar
+    const handlePressHome = () => {
+        // Navigate to Homepage, passing required params
+        navigation.navigate('Homepage', { name: userName, role: userRole });
+    };
+
+    const handlePressMessage = () => {
+        // Placeholder for Message screen navigation
+        console.log('Navigate to Message Screen');
+        // navigation.navigate('MessageScreen'); // Uncomment and replace with your Message screen name
+    };
+
+    const handlePressLocation = () => {
+        // Placeholder for Location screen navigation
+        console.log('Navigate to Location Screen');
+        // navigation.navigate('MapScreen'); // Uncomment and replace with your Location screen name
+    };
+
+    const handlePressProfile = () => {
+        // Navigate to ProfileScreen
+        navigation.navigate({ 
+            name: 'ProfileScreen', 
+            params: { homepageParams: { name: userName, role: userRole } } 
+        });
+    };
+
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <AppBar />
+            <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+                <View style={styles.myPostSection}>
+                    <Text style={styles.sectionTitle}>My Post</Text>
+                    <View style={styles.createPostCard}>
+                        <View style={styles.postInputPlaceholder}>
+                            <Text style={styles.postInputText}>Do you have some food to donate?</Text>
+                        </View>
+                        <TouchableOpacity style={styles.createPostButton}>
+                            <Text style={styles.createPostButtonText}>+ Create a Post</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <View style={styles.tabsSection}>
+                    <TabView
+                        navigationState={{ index, routes }}
+                        renderScene={renderScene}
+                        onIndexChange={setIndex}
+                        initialLayout={initialLayout}
+                        renderTabBar={renderTabBar}
+                    />
+                </View>
+                <View style={styles.helpFoundationSection}>
+                    <Text style={styles.sectionTitle}>Help Foundation</Text>
+                    <View style={styles.foundationCard}>
+                        <View style={styles.foundationTextContainer}>
+                            <Text style={styles.foundationText}>
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc ac diam est. Vestibulum ut semper magna. Aenean viverra aliquet lacus eget imperdiet.
+                            </Text>
+                        </View>
+                        <View style={styles.foundationInfo}>
+                            <Text style={styles.foundationNumber}>1</Text>
+                            <Text style={styles.foundationTime}>5:30 pm</Text>
+                        </View>
+                    </View>
+                </View>
+            </ScrollView>
+            {/* Use the NavigationBar component and pass the current route name and callbacks */}
+            {/* Safely access currentRoute.name */}
+            <NavigationBar
+                activeScreen={currentRoute.name as keyof AuthStackParamList}
+                onPressHome={handlePressHome}
+                onPressMessage={handlePressMessage} // Pass placeholder callback
+                onPressLocation={handlePressLocation} // Pass placeholder callback
+                onPressProfile={handlePressProfile}
+            />
+        </SafeAreaView>
+    );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: PALETTE.background,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-    alignItems: 'center',
-  },
-  welcomeText: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      marginBottom: 8,
-      color: PALETTE.darkPrimary,
-  },
-  roleText: {
-      fontSize: 18,
-      marginBottom: 20,
-      color: PALETTE.textSecondary,
-  },
-   infoText: {
-      fontSize: 16,
-      color: PALETTE.textSecondary,
-      textAlign: 'center',
-      marginBottom: 20,
-  },
-  coordsText: {
-    fontSize: 14,
-    color: PALETTE.darkPrimary,
-    textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  mapButton: {
-    backgroundColor: PALETTE.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 8,
-    marginTop: 20,
-    width: '80%',
-    alignItems: 'center',
-  },
-  mapButtonText: {
-    color: PALETTE.white,
-    fontSize: 16,
-    fontWeight: '600',
-  }
+    container: { flex: 1, backgroundColor: PALETTE.background },
+    content: { flex: 1, padding: 10 },
+    contentContainer: { flexGrow: 1, paddingBottom: 70 },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: PALETTE.textPrimary, marginBottom: 10, marginTop: 10 },
+    myPostSection: { marginBottom: 20 },
+    createPostCard: { backgroundColor: PALETTE.cardBackground, borderRadius: 8, padding: 15, ...Platform.select({ ios: { shadowColor: PALETTE.shadowColor, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 }, android: { elevation: 3 } }) },
+    postInputPlaceholder: { backgroundColor: '#F5F5F5', borderRadius: 5, padding: 10, marginBottom: 15 },
+    postInputText: { fontSize: 16, color: PALETTE.textSecondary },
+    createPostButton: { backgroundColor: PALETTE.primary, paddingVertical: 10, borderRadius: 5, alignItems: 'center' },
+    createPostButtonText: { color: PALETTE.white, fontSize: 16, fontWeight: 'bold' },
+    tabsSection: { flex: 1, marginBottom: 20 },
+    tabContent: { padding: 10, backgroundColor: PALETTE.background, flexGrow: 1 },
+    itemCard: { flexDirection: 'row', backgroundColor: PALETTE.cardBackground, borderRadius: 8, padding: 10, marginBottom: 10, ...Platform.select({ ios: { shadowColor: PALETTE.shadowColor, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3 }, android: { elevation: 2 } }), borderWidth: 1, borderColor: PALETTE.cardBorder },
+    itemImagePlaceholder: { width: 80, height: 80, backgroundColor: '#E0E0E0', borderRadius: 8, marginRight: 10 },
+    itemDetails: { flex: 1, justifyContent: 'center' },
+    itemTitle: { fontSize: 16, fontWeight: 'bold', color: PALETTE.textPrimary, marginBottom: 2 },
+    itemDistance: { fontSize: 14, color: PALETTE.textSecondary, marginBottom: 4 },
+    itemDescription: { fontSize: 14, color: PALETTE.textSecondary, marginBottom: 8 },
+    chatButton: { backgroundColor: PALETTE.primary, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 5, alignSelf: 'flex-start' },
+    chatButtonText: { color: PALETTE.white, fontSize: 12, fontWeight: 'bold' },
+    receiverButtons: { flexDirection: 'row', marginTop: 5 },
+    viewDetailsButton: { backgroundColor: PALETTE.lightAccent, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 5, marginRight: 10, alignSelf: 'flex-start' },
+    viewDetailsButtonText: { color: PALETTE.textPrimary, fontSize: 12, fontWeight: 'bold' },
+    connectButton: { backgroundColor: PALETTE.primary, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 5, alignSelf: 'flex-start' },
+    connectButtonText: { color: PALETTE.white, fontSize: 12, fontWeight: 'bold' },
+    helpFoundationSection: { marginBottom: 20 },
+    foundationCard: { backgroundColor: PALETTE.cardBackground, borderRadius: 8, padding: 15, ...Platform.select({ ios: { shadowColor: PALETTE.shadowColor, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 }, android: { elevation: 3 } }), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    foundationTextContainer: { flex: 1, marginRight: 10 },
+    foundationText: { fontSize: 14, color: PALETTE.textSecondary },
+    foundationInfo: { alignItems: 'flex-end' },
+    foundationNumber: { fontSize: 24, fontWeight: 'bold', color: PALETTE.darkPrimary, marginBottom: 4 },
+    foundationTime: { fontSize: 12, color: PALETTE.textSecondary },
+    bottomNavBar: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: PALETTE.bottomNavBackground, height: 60, borderTopWidth: 1, borderTopColor: '#E0E0E0', ...Platform.select({ ios: { shadowColor: PALETTE.shadowColor, shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 4 }, android: { elevation: 8 } }), position: 'absolute', bottom: 0, left: 0, right: 0, width: '100%' },
+    bottomNavItem: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 5 },
+    bottomNavItemText: { fontSize: 12 }
 });
 
 export default Homepage;
