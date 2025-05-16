@@ -63,8 +63,8 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
         }
     };
 
+// ...existing code...
     return (
-        // Use SafeAreaView for better handling of notches/status bars
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
                 <Text style={styles.title}>Forgot password?</Text>
@@ -73,28 +73,27 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
                 </Text>
                 <TextInput
                     style={styles.input}
-                    placeholder="Email Address" // Updated placeholder
+                    placeholder="Email Address"
                     placeholderTextColor={PALETTE.placeholderText}
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                 />
-                {error && <Text style={styles.errorText}>{error}</Text>}
-                {success && <Text style={styles.successText}>{success}</Text>}
+                />
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                {success ? <Text style={styles.successText}>{success}</Text> : null}
 
                 {loading ? (
                     <ActivityIndicator size="large" color={PALETTE.primary} style={styles.loader} />
                 ) : (
                     <TouchableOpacity style={styles.button} onPress={handlePasswordReset}>
-                        <Text style={styles.buttonText}>Send Email</Text> {/* Updated button text */}
+                        <Text style={styles.buttonText}>Send Email</Text>
                     </TouchableOpacity>
                 )}
-
-                {/* Removed "Back to Login" link */}
             </View>
         </SafeAreaView>
     );
+// ...existing code...
 };
 
 // Updated styles to match the example UI

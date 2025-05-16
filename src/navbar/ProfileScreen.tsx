@@ -3,7 +3,7 @@
 // Corrected import path for NavigationBar.
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert, Image } from 'react-native';
 // Corrected import path based on ProfileScreen being in src/navbar/
 import { useNavigation, RouteProp, useRoute } from '@react-navigation/native'; // Import useRoute
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -17,7 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../navigation/AuthNavigator';
 // Import the NavigationBar component - corrected path based on error message
 import NavigationBar from '../components/AppBar_States/NavigationBar';
-
+import { getAuth, signOut } from 'firebase/auth';
 
 // Define the color palette (consistent with other screens)
 const PALETTE = {
@@ -61,130 +61,145 @@ const ProfileScreen = ({ navigation, route }: Props) => {
     // Get the current route name using useRoute hook
     const currentRoute = useRoute();
 
+    // Extract userName and userRole from homepageParams if available
+    const userName = route.params?.homepageParams?.name || 'Guest';
+    const userRole = route.params?.homepageParams?.role || 'Guest';
+
+    // Logout handler
+    const handleLogout = async () => {
+        try {
+            const auth = getAuth();
+            await signOut(auth);
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+            });
+        } catch (error) {
+            Alert.alert('Logout Failed', 'Unable to log out. Please try again.');
+        }
+    };
+
     // Define navigation callbacks to pass to NavigationBar
     const handlePressHome = () => {
-        // Navigate to Homepage - Note: Homepage requires name and role params
-        // You'll need to decide how to get these params in ProfileScreen if navigating back to Homepage
-        // For now, navigating without params might cause issues on Homepage if it expects them.
-        // A more robust solution might involve a shared state or context for user info.
-        console.log('Navigate to Homepage - Note: Homepage expects name and role params');
-        // navigation.navigate('Homepage', { name: 'DefaultUser', role: 'DefaultRole' }); // Example with default params
-         navigation.navigate('Homepage', route.params?.homepageParams || { name: 'Guest', role: 'Guest' }); // Example assuming Homepage params might be passed to Profile
+        navigation.navigate('Homepage', { name: userName, role: userRole });
     };
 
     const handlePressMessage = () => {
-        // Placeholder for Message screen navigation
-        console.log('Navigate to Message Screen');
-        // navigation.navigate('MessageScreen'); // Uncomment and replace with your Message screen name
+        navigation.navigate('MessageScreen', { name: userName, role: userRole });
     };
 
     const handlePressLocation = () => {
-        // Placeholder for Location screen navigation
-        console.log('Navigate to Location Screen');
-        // navigation.navigate('MapScreen'); // Uncomment and replace with your Location screen name
+        navigation.navigate('MapScreen', { returnRoute: 'ProfileScreen', initialCoords: undefined });
     };
 
     const handlePressProfile = () => {
-        // Already on ProfileScreen, do nothing or scroll to top
-        console.log('Already on Profile Screen');
-        // Optional: Scroll to top of the ScrollView
-        // scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+        navigation.navigate('ProfileScreen', { homepageParams: { name: userName, role: userRole } });
     };
 
 
   return (
     <SafeAreaView style={styles.container}>
-        {/* Profile Header Section */}
-        <View style={styles.profileHeader}>
-            {/* Placeholder for user image/icon */}
-            <View style={styles.profileImagePlaceholder}>
-                 <MaterialIcons name="flash-on" size={30} color={PALETTE.primary} /> {/* Example icon */}
-            </View>
-            <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>Itunuoluwa Abidoye</Text> {/* Placeholder Name */}
-                <Text style={styles.profileHandle}>@itunuoluwa</Text> {/* Placeholder Handle */}
-            </View>
-            <TouchableOpacity style={styles.editIcon}>
-                <MaterialIcons name="edit" size={20} color={PALETTE.primary} />
-            </TouchableOpacity>
-        </View>
-
-        <ScrollView style={styles.content}>
-            {/* My Account Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>My Account</Text>
-                {/* My Account Item */}
-                <TouchableOpacity style={styles.listItem}>
-                    <MaterialIcons name="person-outline" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
-                    <View style={styles.listItemTextContainer}>
-                        <Text style={styles.listItemTitle}>My Account</Text>
-                        <Text style={styles.listItemDescription}>Make changes to your account</Text>
+        <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
+            {/* Profile Header Section as unique App Bar */}
+            <View style={styles.profileHeader}>
+                {/* User profile picture or placeholder */}
+                {route.params?.homepageParams?.profilePicUrl ? (
+                    <Image
+                        source={{ uri: route.params.homepageParams.profilePicUrl }}
+                        style={styles.profileImage}
+                    />
+                ) : (
+                    <View style={styles.profileImagePlaceholder}>
+                        <MaterialIcons name="person" size={36} color="#fff" />
                     </View>
-                    {/* Assuming warning icon is conditional based on account status */}
-                    {/* <MaterialIcons name="warning" size={20} color={PALETTE.warningIcon} style={styles.listItemAccessory} /> */}
-                    <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
-                </TouchableOpacity>
-                {/* Saved Beneficiary Item */}
-                <TouchableOpacity style={styles.listItem}>
-                    <MaterialIcons name="bookmark-border" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
-                    <View style={styles.listItemTextContainer}>
-                        <Text style={styles.listItemTitle}>Saved Beneficiary</Text>
-                        <Text style={styles.listItemDescription}>Manage your saved account</Text>
-                    </View>
-                    <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
-                </TouchableOpacity>
-                {/* Settings Item */}
-                <TouchableOpacity style={styles.listItem}>
-                    <MaterialIcons name="settings" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
-                    <View style={styles.listItemTextContainer}>
-                        <Text style={styles.listItemTitle}>Settings</Text>
-                        <Text style={styles.listItemDescription}>Adjust App preferences</Text>
-                    </View>
-                    <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
-                </TouchableOpacity>
-                 {/* Log out Item */}
-                <TouchableOpacity style={styles.listItem}>
-                    <MaterialIcons name="logout" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
-                    <View style={styles.listItemTextContainer}>
-                        <Text style={styles.listItemTitle}>Log out</Text>
-                        <Text style={styles.listItemDescription}>Further secure your account for safety</Text>
-                    </View>
-                    <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
+                )}
+                <View style={styles.profileInfo}>
+                    <Text style={styles.profileName}>
+                        {route.params?.homepageParams?.name || 'Guest'}
+                    </Text>
+                    <Text style={styles.profileHandle}>
+                        @{(route.params?.homepageParams?.name || 'guest').replace(/\s+/g, '').toLowerCase()}
+                    </Text>
+                </View>
+                <TouchableOpacity style={styles.editIcon}>
+                    <MaterialIcons name="edit" size={20} color={PALETTE.primary} />
                 </TouchableOpacity>
             </View>
 
-            {/* More Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>More</Text>
-                {/* Manage Request Item */}
-                <TouchableOpacity style={styles.listItem}>
-                    <MaterialIcons name="notifications-none" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
-                    <View style={styles.listItemTextContainer}>
-                        <Text style={styles.listItemTitle}>Manage Request</Text>
-                    </View>
-                    <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
-                </TouchableOpacity>
-                {/* Manage Donations Item */}
-                <TouchableOpacity style={styles.listItem}>
-                    <MaterialIcons name="favorite-border" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
-                    <View style={styles.listItemTextContainer}>
-                        <Text style={styles.listItemTitle}>Manage Donations</Text>
-                    </View>
-                    <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
-                </TouchableOpacity>
-            </View>
+            {/* Main Content */}
+            <View style={styles.content}>
+                {/* My Account Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>My Account</Text>
+                    {/* My Account Item */}
+                    <TouchableOpacity style={styles.listItem}>
+                        <MaterialIcons name="person-outline" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
+                        <View style={styles.listItemTextContainer}>
+                            <Text style={styles.listItemTitle}>My Account</Text>
+                            <Text style={styles.listItemDescription}>Make changes to your account</Text>
+                        </View>
+                        {/* Assuming warning icon is conditional based on account status */}
+                        {/* <MaterialIcons name="warning" size={20} color={PALETTE.warningIcon} style={styles.listItemAccessory} /> */}
+                        <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
+                    </TouchableOpacity>
+                    {/* Saved Beneficiary Item */}
+                    <TouchableOpacity style={styles.listItem}>
+                        <MaterialIcons name="bookmark-border" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
+                        <View style={styles.listItemTextContainer}>
+                            <Text style={styles.listItemTitle}>Saved Beneficiary</Text>
+                            <Text style={styles.listItemDescription}>Manage your saved account</Text>
+                        </View>
+                        <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
+                    </TouchableOpacity>
+                    {/* Settings Item */}
+                    <TouchableOpacity style={styles.listItem}>
+                        <MaterialIcons name="settings" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
+                        <View style={styles.listItemTextContainer}>
+                            <Text style={styles.listItemTitle}>Settings</Text>
+                            <Text style={styles.listItemDescription}>Adjust App preferences</Text>
+                        </View>
+                        <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
+                    </TouchableOpacity>
+                    {/* Log out Item */}
+                    <TouchableOpacity style={styles.listItem} onPress={handleLogout}>
+                        <MaterialIcons name="logout" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
+                        <View style={styles.listItemTextContainer}>
+                            <Text style={styles.listItemTitle}>Log out</Text>
+                            <Text style={styles.listItemDescription}>Further secure your account for safety</Text>
+                        </View>
+                        <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
+                    </TouchableOpacity>
+                </View>
 
+                {/* More Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>More</Text>
+                    {/* Manage Request Item */}
+                    <TouchableOpacity style={styles.listItem}>
+                        <MaterialIcons name="notifications-none" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
+                        <View style={styles.listItemTextContainer}>
+                            <Text style={styles.listItemTitle}>Manage Request</Text>
+                        </View>
+                        <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
+                    </TouchableOpacity>
+                    {/* Manage Donations Item */}
+                    <TouchableOpacity style={styles.listItem}>
+                        <MaterialIcons name="favorite-border" size={24} color={PALETTE.textSecondary} style={styles.listItemIcon} />
+                        <View style={styles.listItemTextContainer}>
+                            <Text style={styles.listItemTitle}>Manage Donations</Text>
+                        </View>
+                        <MaterialIcons name="chevron-right" size={24} color={PALETTE.textSecondary} />
+                    </TouchableOpacity>
+                </View>
+            </View>
         </ScrollView>
-
-        {/* Use the NavigationBar component and pass the current route name and callbacks */}
         <NavigationBar
             activeScreen={currentRoute.name}
             onPressHome={handlePressHome}
-            onPressMessage={handlePressMessage} // Pass placeholder callback
-            onPressLocation={handlePressLocation} // Pass placeholder callback
+            onPressMessage={handlePressMessage}
+            onPressLocation={handlePressLocation}
             onPressProfile={handlePressProfile}
         />
-
     </SafeAreaView>
   );
 };
@@ -219,6 +234,12 @@ const styles = StyleSheet.create({
         backgroundColor: PALETTE.primary, // Example background color
         justifyContent: 'center',
         alignItems: 'center',
+        marginRight: 15,
+    },
+    profileImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 25, // Make it a circle
         marginRight: 15,
     },
     profileInfo: {

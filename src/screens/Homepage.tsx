@@ -201,35 +201,26 @@ const Homepage = ({ route, navigation }: Props) => {
 
     // Define navigation callbacks to pass to NavigationBar
     const handlePressHome = () => {
-        // Navigate to Homepage, passing required params
         navigation.navigate('Homepage', { name: userName, role: userRole });
     };
 
     const handlePressMessage = () => {
-        // Placeholder for Message screen navigation
-        console.log('Navigate to Message Screen');
-        // navigation.navigate('MessageScreen'); // Uncomment and replace with your Message screen name
+        navigation.navigate('MessageScreen', { name: userName, role: userRole });
     };
 
     const handlePressLocation = () => {
-        // Placeholder for Location screen navigation
-        console.log('Navigate to Location Screen');
-        // navigation.navigate('MapScreen'); // Uncomment and replace with your Location screen name
+        navigation.navigate('MapScreen', { returnRoute: 'Homepage', initialCoords: undefined });
     };
 
     const handlePressProfile = () => {
-        // Navigate to ProfileScreen
-        navigation.navigate({ 
-            name: 'ProfileScreen', 
-            params: { homepageParams: { name: userName, role: userRole } } 
-        });
+        navigation.navigate('ProfileScreen', { homepageParams: { name: userName, role: userRole } });
     };
 
 
     return (
         <SafeAreaView style={styles.container}>
-            <AppBar />
-            <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+            <ScrollView contentContainerStyle={styles.contentContainer}>
+                <AppBar />
                 <View style={styles.myPostSection}>
                     <Text style={styles.sectionTitle}>My Post</Text>
                     <View style={styles.createPostCard}>
@@ -265,15 +256,13 @@ const Homepage = ({ route, navigation }: Props) => {
                     </View>
                 </View>
             </ScrollView>
-            {/* Use the NavigationBar component and pass the current route name and callbacks */}
-            {/* Safely access currentRoute.name */}
-            <NavigationBar
-                activeScreen={currentRoute.name as keyof AuthStackParamList}
-                onPressHome={handlePressHome}
-                onPressMessage={handlePressMessage} // Pass placeholder callback
-                onPressLocation={handlePressLocation} // Pass placeholder callback
-                onPressProfile={handlePressProfile}
-            />
+            <NavigationBar
+                activeScreen={currentRoute.name as keyof AuthStackParamList}
+                onPressHome={handlePressHome}
+                onPressMessage={handlePressMessage}
+                onPressLocation={handlePressLocation}
+                onPressProfile={handlePressProfile}
+            />
         </SafeAreaView>
     );
 };
